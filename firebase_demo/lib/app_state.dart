@@ -1,4 +1,4 @@
-import 'dart:async';                                     // new
+import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'
@@ -8,30 +8,31 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
-import 'guest_book_message.dart';                        // new
-enum Attending { yes, no, unknown }
+import 'guest_book_message.dart';
+
 class ApplicationState extends ChangeNotifier {
   ApplicationState() {
     init();
   }
-  int _attendees = 0;
-  int get attendees => _attendees;
 
-  Attending _attending = Attending.unknown;
+  int _totalAttendees = 0;
+  int get totalAttendees => _totalAttendees;
+
+  int _userAttendeeCount = 0;
   StreamSubscription<DocumentSnapshot>? _attendingSubscription;
-  Attending get attending => _attending;
-  set attending(Attending attending) {
+  int get userAttendeeCount => _userAttendeeCount;
+  set userAttendeeCount(int count) {
     final userDoc = FirebaseFirestore.instance
         .collection('attendees')
         .doc(FirebaseAuth.instance.currentUser!.uid);
-    if (attending == Attending.yes) {
-      userDoc.set(<String, dynamic>{'attending': true});
-    } else {
-      userDoc.set(<String, dynamic>{'attending': false});
-    }
+    userDoc.set(<String, dynamic>{'attendeeCount': count});
   }
+
   bool _loggedIn = false;
   bool get loggedIn => _loggedIn;
+  bool _emailVerified = false;
+  bool get emailVerified => _emailVerified;
+
   StreamSubscription<QuerySnapshot>? _guestBookSubscription;
   List<GuestBookMessage> _guestBookMessages = [];
   List<GuestBookMessage> get guestBookMessages => _guestBookMessages;
@@ -44,16 +45,13 @@ class ApplicationState extends ChangeNotifier {
       EmailAuthProvider(),
     ]);
 
-    // Add from here...
     FirebaseFirestore.instance
         .collection('attendees')
-        .where('attending', isEqualTo: true)
         .snapshots()
         .listen((snapshot) {
-      _attendees = snapshot.docs.length;
+      _totalAttendees = snapshot.docs.fold(0, (total, doc) => total + (doc.data()['attendeeCount'] as int? ?? 0));
       notifyListeners();
     });
-    // ...to here.
 
     FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
@@ -75,36 +73,31 @@ class ApplicationState extends ChangeNotifier {
           }
           notifyListeners();
         });
-        // Add from here...
+
         _attendingSubscription = FirebaseFirestore.instance
             .collection('attendees')
             .doc(user.uid)
             .snapshots()
             .listen((snapshot) {
           if (snapshot.data() != null) {
-            if (snapshot.data()!['attending'] as bool) {
-              _attending = Attending.yes;
-            } else {
-              _attending = Attending.no;
-            }
+            _userAttendeeCount = snapshot.data()!['attendeeCount'] as int? ?? 0;
           } else {
-            _attending = Attending.unknown;
+            _userAttendeeCount = 0;
           }
           notifyListeners();
         });
-        // ...to here.
       } else {
         _loggedIn = false;
         _emailVerified = false;
         _guestBookMessages = [];
         _guestBookSubscription?.cancel();
-        _attendingSubscription?.cancel(); // new
+        _attendingSubscription?.cancel();
       }
       notifyListeners();
     });
   }
 
-    Future<DocumentReference> addMessageToGuestBook(String message) {
+  Future<DocumentReference> addMessageToGuestBook(String message) {
     if (!_loggedIn) {
       throw Exception('Must be logged in');
     }

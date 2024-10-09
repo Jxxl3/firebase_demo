@@ -10,7 +10,7 @@ import 'src/authentication.dart';
 import 'src/widgets.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,18 +47,11 @@ class HomePage extends StatelessWidget {
             builder: (context, appState, _) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Add from here...
-                switch (appState.attendees) {
-                  1 => const Paragraph('1 person going'),
-                  >= 2 => Paragraph('${appState.attendees} people going'),
-                  _ => const Paragraph('No one going'),
-                },
-                // ...to here.
+                Paragraph('${appState.totalAttendees} people attending'),
                 if (appState.loggedIn) ...[
-                  // Add from here...
-                  YesNoSelection(
-                    state: appState.attending,
-                    onSelection: (attending) => appState.attending = attending,
+                  AttendeeSelection(
+                    state: appState.userAttendeeCount,
+                    onChanged: (count) => appState.userAttendeeCount = count,
                   ),
                   // ...to here.
                   const Header('Discussion'),

@@ -1,68 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_state.dart';
-import 'src/widgets.dart';
 
-class YesNoSelection extends StatelessWidget {
-  const YesNoSelection(
-      {super.key, required this.state, required this.onSelection});
-  final Attending state;
-  final void Function(Attending selection) onSelection;
+class AttendeeSelection extends StatelessWidget {
+  const AttendeeSelection({
+    super.key,
+    required this.state,
+    required this.onChanged,
+  });
+
+  final int state;
+  final void Function(int count) onChanged;
 
   @override
   Widget build(BuildContext context) {
-    switch (state) {
-      case Attending.yes:
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              FilledButton(
-                onPressed: () => onSelection(Attending.yes),
-                child: const Text('YES'),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => onSelection(Attending.no),
-                child: const Text('NO'),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          const Text('Number of attendees: '),
+          SizedBox(
+            width: 64,
+            child: TextFormField(
+              initialValue: state.toString(),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                final count = int.tryParse(value) ?? 0;
+                onChanged(count);
+              },
+            ),
           ),
-        );
-      case Attending.no:
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              TextButton(
-                onPressed: () => onSelection(Attending.yes),
-                child: const Text('YES'),
-              ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: () => onSelection(Attending.no),
-                child: const Text('NO'),
-              ),
-            ],
-          ),
-        );
-      default:
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            children: [
-              StyledButton(
-                onPressed: () => onSelection(Attending.yes),
-                child: const Text('YES'),
-              ),
-              const SizedBox(width: 8),
-              StyledButton(
-                onPressed: () => onSelection(Attending.no),
-                child: const Text('NO'),
-              ),
-            ],
-          ),
-        );
-    }
+        ],
+      ),
+    );
   }
 }
